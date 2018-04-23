@@ -7,6 +7,7 @@
 #include "third_party/blink/public/platform/web_blob_info.h"
 #include "third_party/blink/renderer/bindings/core/v8/serialization/unpacked_serialized_script_value.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_for_core.h"
+#include "third_party/blink/renderer/core/cowl/label.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/fileapi/blob.h"
 #include "third_party/blink/renderer/core/fileapi/file.h"
@@ -396,6 +397,9 @@ ScriptWrappable* V8ScriptValueDeserializer::ReadDOMObject(
       memcpy(pixel_buffer->Data(), pixels, byte_length);
       return image_data;
     }
+    case kLabelTag: {
+      return ReadLabel();
+    }
     case kDOMPointTag: {
       double x = 0, y = 0, z = 0, w = 1;
       if (!ReadDouble(&x) || !ReadDouble(&y) || !ReadDouble(&z) ||
@@ -548,6 +552,27 @@ File* V8ScriptValueDeserializer::ReadFileIndex() {
   return File::CreateFromIndexedSerialization(info.FilePath(), info.FileName(),
                                               info.size(), last_modified_ms,
                                               blob_handle);
+}
+
+Label* V8ScriptValueDeserializer::ReadLabel() {
+  DisjunctionSetArray roles;
+  uint32_t roles_size = 0;
+  ReadUint32(&roles_size);
+  for (unsigned i = 0; i < roles_size; ++i) {
+    DisjunctionSet role;
+    uint32_t role_size = 0;
+    ReadUint32(&role_size);
+    for (unsigned j = 0; j < role_size; ++j) {
+      uint32_t type;
+      String principal;
+      ReadUint32(&type);
+      ReadUTF8String(&principal);
+      COWLPrincipal new_principal = COWLPrincipal(principal, (COWLPrincipalType)type);
+      role.push_back(new_principal);
+    }
+    roles.push_back(role);
+  }
+  return Label::Create(roles);
 }
 
 scoped_refptr<BlobDataHandle>

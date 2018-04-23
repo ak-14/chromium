@@ -187,6 +187,7 @@ component("core") {
   deps = [
     "//third_party/blink/public/common",
     "//third_party/blink/renderer/core/animation",
+    "//third_party/blink/renderer/core/cowl",
     "//third_party/blink/renderer/core/clipboard",
     "//third_party/blink/renderer/core/context_features",
     "//third_party/blink/renderer/core/css",
@@ -1635,6 +1636,7 @@ jumbo_source_set("unit_tests") {
     "animation/property_handle_test.cc",
     "animation/timing_calculations_test.cc",
     "animation/timing_input_test.cc",
+    "cowl/cowl_parser_test.cc",
     "clipboard/data_object_test.cc",
     "clipboard/data_transfer_test.cc",
     "css/active_style_sheets_test.cc",

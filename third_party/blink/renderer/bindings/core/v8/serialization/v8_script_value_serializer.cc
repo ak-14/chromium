@@ -18,10 +18,12 @@
 #include "third_party/blink/renderer/bindings/core/v8/v8_file_list.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_image_bitmap.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_image_data.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_label.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_message_port.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_offscreen_canvas.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_shared_array_buffer.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_throw_dom_exception.h"
+#include "third_party/blink/renderer/core/cowl/label.h"
 #include "third_party/blink/renderer/core/geometry/dom_matrix.h"
 #include "third_party/blink/renderer/core/geometry/dom_matrix_read_only.h"
 #include "third_party/blink/renderer/core/geometry/dom_point.h"
@@ -268,6 +270,12 @@ bool V8ScriptValueSerializer::WriteDOMObject(ScriptWrappable* wrappable,
     WriteRawBytes(pixel_buffer->Data(), pixel_buffer->ByteLength());
     return true;
   }
+  if (wrapper_type_info == &V8Label::wrapperTypeInfo) {
+    Label* label = wrappable->ToImpl<Label>();
+    WriteTag(kLabelTag);
+    WriteLabel(label);
+    return true;
+  }
   if (wrapper_type_info == &V8DOMPoint::wrapperTypeInfo) {
     DOMPoint* point = wrappable->ToImpl<DOMPoint>();
     WriteTag(kDOMPointTag);
@@ -468,6 +476,20 @@ bool V8ScriptValueSerializer::WriteFile(File* file,
     WriteUint32(file->GetUserVisibility() == File::kIsUserVisible ? 1 : 0);
   }
   return true;
+}
+
+void V8ScriptValueSerializer::WriteLabel(Label* label) {
+  DisjunctionSetArray roles = label->GetRoles();
+  WriteUint32(roles.size());
+  for (unsigned i = 0; i < roles.size(); ++i) {
+    DisjunctionSet role = roles[i];
+    WriteUint32(role.size());
+    for (unsigned j = 0; j < role.size(); ++j) {
+      COWLPrincipal& principal = role[j];
+      WriteUint32((unsigned int)principal.GetType());
+      WriteUTF8String(principal.ToString());
+    }
+  }
 }
 
 void V8ScriptValueSerializer::ThrowDataCloneError(

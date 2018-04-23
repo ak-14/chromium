@@ -18,6 +18,7 @@
 namespace blink {
 
 class File;
+class Label;
 class UnpackedSerializedScriptValue;
 
 // Deserializes V8 values serialized using V8ScriptValueSerializer (or its
@@ -90,6 +91,8 @@ class CORE_EXPORT V8ScriptValueDeserializer
 
   File* ReadFile();
   File* ReadFileIndex();
+
+  Label* ReadLabel();
 
   scoped_refptr<BlobDataHandle> GetOrCreateBlobDataHandle(const String& uuid,
                                                           const String& type,
