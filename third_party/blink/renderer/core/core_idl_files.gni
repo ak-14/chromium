@@ -42,6 +42,7 @@ core_idl_files =
                     "animation/document_timeline.idl",
                     "animation/keyframe_effect.idl",
                     "animation/scroll_timeline.idl",
+                    "cowl/cowl.idl",
                     "cowl/label.idl",
                     "cowl/privilege.idl",
                     "clipboard/data_transfer.idl",

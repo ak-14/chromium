@@ -183,6 +183,10 @@ ContentSecurityPolicy* ExecutionContext::GetContentSecurityPolicy() {
   return GetSecurityContext().GetContentSecurityPolicy();
 }
 
+COWL* ExecutionContext::GetCOWL() {
+  return GetSecurityContext().GetCOWL();
+}
+
 void ExecutionContext::AllowWindowInteraction() {
   ++window_interaction_tokens_;
 }

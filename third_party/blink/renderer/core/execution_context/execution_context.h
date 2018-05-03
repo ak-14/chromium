@@ -111,6 +111,7 @@ class CORE_EXPORT ExecutionContext : public ContextLifecycleNotifier,
   SecurityOrigin* GetMutableSecurityOrigin();
 
   ContentSecurityPolicy* GetContentSecurityPolicy();
+  COWL* GetCOWL();
   virtual const KURL& Url() const = 0;
   virtual const KURL& BaseURL() const = 0;
   virtual KURL CompleteURL(const String& url) const = 0;

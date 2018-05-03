@@ -170,6 +170,13 @@ void HTMLIFrameElement::ParseAttribute(
       FrameOwnerPropertiesChanged();
       UpdateContainerPolicy();
     }
+  } else if (name == cowlAttr) {
+    bool old_cowl = cowl_;
+    cowl_ = !value.IsNull();
+    if (cowl_ != old_cowl) {
+      FrameOwnerPropertiesChanged();
+      UpdateContainerPolicy();
+    }
   } else if (RuntimeEnabledFeatures::EmbedderCSPEnforcementEnabled() &&
              name == cspAttr) {
     if (!ContentSecurityPolicy::IsValidCSPAttr(

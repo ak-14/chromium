@@ -27,6 +27,7 @@
 #include "third_party/blink/renderer/core/execution_context/security_context.h"
 
 #include "third_party/blink/public/platform/platform.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/frame/csp/content_security_policy.h"
 #include "third_party/blink/renderer/platform/feature_policy/feature_policy.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
@@ -58,6 +59,7 @@ SecurityContext::~SecurityContext() = default;
 
 void SecurityContext::Trace(blink::Visitor* visitor) {
   visitor->Trace(content_security_policy_);
+  visitor->Trace(cowl_);
 }
 
 void SecurityContext::SetSecurityOrigin(
@@ -69,6 +71,10 @@ void SecurityContext::SetSecurityOrigin(
 void SecurityContext::SetContentSecurityPolicy(
     ContentSecurityPolicy* content_security_policy) {
   content_security_policy_ = content_security_policy;
+}
+
+void SecurityContext::SetCOWL(COWL* cowl) {
+  cowl_ = cowl;
 }
 
 void SecurityContext::EnforceSandboxFlags(SandboxFlags mask) {

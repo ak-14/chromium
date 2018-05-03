@@ -6,6 +6,10 @@ import("//third_party/blink/renderer/core/core.gni")
 
 blink_core_sources("cowl") {
   sources = [
+    "cowl.h",
+    "cowl.cc",
+    "cowl_interface.h",
+    "cowl_interface.cc",
     "cowl_parser.cc",
     "cowl_parser.h",
     "cowl_principal.h",

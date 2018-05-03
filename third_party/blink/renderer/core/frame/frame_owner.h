@@ -60,6 +60,7 @@ class CORE_EXPORT FrameOwner : public GarbageCollectedMixin {
   virtual bool AllowPaymentRequest() const = 0;
   virtual bool IsDisplayNone() const = 0;
   virtual AtomicString RequiredCsp() const = 0;
+  virtual bool Cowl() const = 0;
   virtual const ParsedFeaturePolicy& ContainerPolicy() const = 0;
 
   // Returns whether or not children of the owned frame should be lazily loaded.
@@ -99,6 +100,7 @@ class CORE_EXPORT DummyFrameOwner final
   bool AllowPaymentRequest() const override { return false; }
   bool IsDisplayNone() const override { return false; }
   AtomicString RequiredCsp() const override { return g_null_atom; }
+  bool Cowl() const override { return false; }
   const ParsedFeaturePolicy& ContainerPolicy() const override {
     DEFINE_STATIC_LOCAL(ParsedFeaturePolicy, container_policy, ());
     return container_policy;

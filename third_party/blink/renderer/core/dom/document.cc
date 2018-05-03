@@ -57,6 +57,7 @@
 #include "third_party/blink/renderer/core/animation/document_timeline.h"
 #include "third_party/blink/renderer/core/animation/pending_animations.h"
 #include "third_party/blink/renderer/core/core_initializer.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/css/css_font_selector.h"
 #include "third_party/blink/renderer/core/css/css_property_value_set.h"
 #include "third_party/blink/renderer/core/css/css_style_declaration.h"
@@ -6019,6 +6020,7 @@ void Document::InitSecurityContext(const DocumentInit& initializer) {
     SetSecurityOrigin(SecurityOrigin::CreateUnique());
     InitContentSecurityPolicy();
     ApplyFeaturePolicy({});
+    InitCOWL();
     return;
   }
 
@@ -6129,6 +6131,13 @@ void Document::InitSecurityContext(const DocumentInit& initializer) {
   ApplyFeaturePolicy({});
 
   InitSecureContextState();
+
+  InitCOWL();
+}
+
+void Document::InitCOWL(COWL* cowl) {
+  SetCOWL(cowl ? cowl : COWL::Create());
+  GetCOWL()->BindToExecutionContext(this);
 }
 
 void Document::InitSecureContextState() {

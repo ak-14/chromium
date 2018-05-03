@@ -928,7 +928,7 @@ void LocalFrameClientImpl::DidChangeFrameOwnerProperties(
           frame_element->ScrollingMode(), frame_element->MarginWidth(),
           frame_element->MarginHeight(), frame_element->AllowFullscreen(),
           frame_element->AllowPaymentRequest(), frame_element->IsDisplayNone(),
-          frame_element->RequiredCsp()));
+          frame_element->RequiredCsp(), frame_element->Cowl()));
 }
 
 void LocalFrameClientImpl::DispatchWillStartUsingPeerConnectionHandler(

@@ -283,6 +283,7 @@ class CORE_EXPORT Document : public ContainerNode,
   using SecurityContext::GetSecurityOrigin;
   using SecurityContext::GetMutableSecurityOrigin;
   using SecurityContext::GetContentSecurityPolicy;
+  using SecurityContext::GetCOWL;
   using TreeScope::getElementById;
 
   bool CanContainRangeEndPoint() const override { return true; }
@@ -1082,6 +1083,9 @@ class CORE_EXPORT Document : public ContainerNode,
   void InitContentSecurityPolicy(
       ContentSecurityPolicy* = nullptr,
       const ContentSecurityPolicy* policy_to_inherit = nullptr);
+
+  void InitCOWL(COWL* = nullptr);
+  bool IsCOWLAttributeEnabled();
 
   bool IsSecureTransitionTo(const KURL&) const;
 

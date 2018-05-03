@@ -25,6 +25,7 @@ struct WebFrameOwnerProperties {
   bool allow_payment_request;
   bool is_display_none;
   WebString required_csp;
+  bool cowl;
 
  public:
   WebFrameOwnerProperties()
@@ -33,7 +34,8 @@ struct WebFrameOwnerProperties {
         margin_height(-1),
         allow_fullscreen(false),
         allow_payment_request(false),
-        is_display_none(false) {}
+        is_display_none(false),
+        cowl(false) {}
 
 #if INSIDE_BLINK
   WebFrameOwnerProperties(const WebString& name,
@@ -43,7 +45,8 @@ struct WebFrameOwnerProperties {
                           bool allow_fullscreen,
                           bool allow_payment_request,
                           bool is_display_none,
-                          const WebString& required_csp)
+                          const WebString& required_csp,
+                          bool cowl)
       : name(name),
         scrolling_mode(static_cast<ScrollingMode>(scrolling_mode)),
         margin_width(margin_width),
@@ -51,7 +54,8 @@ struct WebFrameOwnerProperties {
         allow_fullscreen(allow_fullscreen),
         allow_payment_request(allow_payment_request),
         is_display_none(is_display_none),
-        required_csp(required_csp) {}
+        required_csp(required_csp),
+        cowl(cowl) {}
 #endif
 };
 
