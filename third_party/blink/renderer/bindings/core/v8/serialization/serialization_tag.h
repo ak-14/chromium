@@ -41,6 +41,7 @@ enum SerializationTag {
                           // transferred MessagePort.
 
   kLabelTag = 'z', // size:uint32_t, roles:dset[size] -> Label
+  kLabeledObjectTag = 'Z',  // confidentiality:label, integrity:label, obj:value -> LabeledObject
 
   kBlobTag = 'b',  // uuid:WebCoreString, type:WebCoreString, size:uint64_t ->
                    // Blob (ref)

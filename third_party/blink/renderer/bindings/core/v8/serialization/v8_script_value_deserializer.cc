@@ -8,6 +8,7 @@
 #include "third_party/blink/renderer/bindings/core/v8/serialization/unpacked_serialized_script_value.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_for_core.h"
 #include "third_party/blink/renderer/core/cowl/label.h"
+#include "third_party/blink/renderer/core/cowl/labeled_object.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/fileapi/blob.h"
 #include "third_party/blink/renderer/core/fileapi/file.h"
@@ -399,6 +400,22 @@ ScriptWrappable* V8ScriptValueDeserializer::ReadDOMObject(
     }
     case kLabelTag: {
       return ReadLabel();
+    }
+    case kLabeledObjectTag: {
+      Label* conf = ReadLabel();
+      Label* integrity = ReadLabel();
+
+      v8::Local<v8::Context> context = script_state_->GetContext();
+      v8::Local<v8::Value> value;
+      if (!deserializer_.ReadValue(context).ToLocal(&value))
+        return nullptr;
+      CILabel new_labels;
+      new_labels.setConfidentiality(conf);
+      new_labels.setIntegrity(integrity);
+      v8::Isolate* isolate = script_state_->GetIsolate();
+      ExceptionState exception_state(isolate, ExceptionState::kUnknownContext,
+          nullptr, nullptr);
+      return LabeledObject::Create(script_state_.get(), ScriptValue(script_state_.get(), value), new_labels, exception_state);
     }
     case kDOMPointTag: {
       double x = 0, y = 0, z = 0, w = 1;

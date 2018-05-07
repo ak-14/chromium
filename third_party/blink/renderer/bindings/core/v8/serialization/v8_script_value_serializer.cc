@@ -19,6 +19,7 @@
 #include "third_party/blink/renderer/bindings/core/v8/v8_image_bitmap.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_image_data.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_label.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_labeled_object.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_message_port.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_offscreen_canvas.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_shared_array_buffer.h"
@@ -274,6 +275,25 @@ bool V8ScriptValueSerializer::WriteDOMObject(ScriptWrappable* wrappable,
     Label* label = wrappable->ToImpl<Label>();
     WriteTag(kLabelTag);
     WriteLabel(label);
+    return true;
+  }
+  if (wrapper_type_info == &V8LabeledObject::wrapperTypeInfo) {
+    LabeledObject* labeled_obj = wrappable->ToImpl<LabeledObject>();
+    WriteTag(kLabeledObjectTag);
+    WriteLabel(labeled_obj->confidentiality());
+    WriteLabel(labeled_obj->integrity());
+
+    ScriptValue obj = labeled_obj->GetObj();
+    v8::Local<v8::Value> value = obj.V8Value();
+    v8::TryCatch try_catch(script_state_->GetIsolate());
+    bool wrote_value;
+    if (!serializer_.WriteValue(script_state_->GetContext(), value)
+        .To(&wrote_value)) {
+      DCHECK(try_catch.HasCaught());
+      exception_state.RethrowV8Exception(try_catch.Exception());
+      return false;
+    }
+    DCHECK(wrote_value);
     return true;
   }
   if (wrapper_type_info == &V8DOMPoint::wrapperTypeInfo) {
