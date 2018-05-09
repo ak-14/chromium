@@ -39,6 +39,7 @@
 #include "third_party/blink/renderer/bindings/core/v8/v8_document.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_form_data.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_html_document.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_labeled_object.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/probe/core_probes.h"
 #include "third_party/blink/renderer/core/workers/worker_global_scope.h"
@@ -107,6 +108,36 @@ void V8XMLHttpRequest::responseAttributeGetterCustom(
     case XMLHttpRequest::kResponseTypeBlob: {
       Blob* blob = xml_http_request->ResponseBlob();
       V8SetReturnValueFast(info, blob, xml_http_request);
+      return;
+    }
+
+    case XMLHttpRequest::kResponseTypeLabeledJSON: {
+      v8::Isolate* isolate = info.GetIsolate();
+
+      v8::Local<v8::String> json_source =
+          xml_http_request->ResponseLabeledJSONSource();
+      if (json_source.IsEmpty()) {
+        V8SetReturnValue(info, v8::Null(isolate));
+        return;
+      }
+      v8::Local<v8::Value> labeled_json =
+          FromJSONString(isolate, isolate->GetCurrentContext(),
+                         ToCoreString(json_source), exception_state);
+      if (exception_state.HadException()) {
+        exception_state.ClearException();
+        V8SetReturnValue(info, v8::Null(isolate));
+      } else {
+        String origin = SecurityOrigin::Create(xml_http_request->Url())->ToString();
+        LabeledObject* lobj = LabeledObject::CreateFromLabeledJSON(labeled_json,
+                                                                   origin,
+                                                                   isolate);
+        if (!lobj) {
+          V8SetReturnValue(info, v8::Null(isolate));
+          return;
+        } else {
+          V8SetReturnValue(info, lobj);
+        }
+      }
       return;
     }
 

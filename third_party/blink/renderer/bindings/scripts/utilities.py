@@ -440,6 +440,8 @@ def shorten_union_name(union_type):
         'NodeOrLongSequenceOrEventOrXMLHttpRequestOrStringOrStringByteStringOrNodeListRecord': 'NestedUnionType',
         # modules/offscreencanvas/OffscreenCanvasModules.idl
         'OffscreenCanvasRenderingContext2DOrWebGLRenderingContextOrWebGL2RenderingContext': 'OffscreenRenderingContext',
+        # core/xmlhttprequest/XMLHttpRequest.idl
+        'ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrLabeledObjectOrURLSearchParams': 'XHRBody',
     }
 
     idl_type = union_type

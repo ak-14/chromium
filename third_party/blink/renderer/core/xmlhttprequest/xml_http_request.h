@@ -49,7 +49,7 @@
 namespace blink {
 
 class
-    ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrURLSearchParams;
+    ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrLabeledObjectOrURLSearchParams;
 class Blob;
 class BlobDataHandle;
 class DOMArrayBuffer;
@@ -59,6 +59,7 @@ class DocumentParser;
 class ExceptionState;
 class ExecutionContext;
 class FormData;
+class LabeledObject;
 class ScriptState;
 class SharedBuffer;
 class TextResourceDecoder;
@@ -102,6 +103,7 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
     kResponseTypeDocument,
     kResponseTypeBlob,
     kResponseTypeArrayBuffer,
+    kResponseTypeLabeledJSON,
   };
 
   // PausableObject
@@ -135,7 +137,7 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
             bool async,
             ExceptionState&);
   void send(
-      const ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrURLSearchParams&,
+      const ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrLabeledObjectOrURLSearchParams&,
       ExceptionState&);
   void abort();
   void Dispose();
@@ -147,6 +149,7 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
   const AtomicString& getResponseHeader(const AtomicString&) const;
   v8::Local<v8::String> responseText(ExceptionState&);
   v8::Local<v8::String> ResponseJSONSource();
+  v8::Local<v8::String> ResponseLabeledJSONSource();
   Document* responseXML(ExceptionState&);
   Blob* ResponseBlob();
   DOMArrayBuffer* ResponseArrayBuffer();
@@ -226,6 +229,7 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
   String FinalResponseCharset() const;
   bool ResponseIsXML() const;
   bool ResponseIsHTML() const;
+  bool ResponseIsLabeledJSON() const;
 
   std::unique_ptr<TextResourceDecoder> CreateDecoder() const;
 
@@ -241,6 +245,7 @@ class XMLHttpRequest final : public XMLHttpRequestEventTarget,
   void send(Document*, ExceptionState&);
   void send(const String&, ExceptionState&);
   void send(Blob*, ExceptionState&);
+  void send(LabeledObject*, ExceptionState&);
   void send(FormData*, ExceptionState&);
   void send(URLSearchParams*, ExceptionState&);
   void send(DOMArrayBuffer*, ExceptionState&);

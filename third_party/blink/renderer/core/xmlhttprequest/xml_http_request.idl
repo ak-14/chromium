@@ -34,6 +34,7 @@ enum XMLHttpRequestResponseType {
     "blob",
     "document",
     "json",
+    "labeled-json",
     "text",
 };
 
@@ -63,7 +64,7 @@ enum XMLHttpRequestResponseType {
     readonly attribute XMLHttpRequestUpload upload;
     // TODO(foolip): The data argument should be of type
     // (Document or BodyInit)?
-    [RaisesException] void send(optional (ArrayBuffer or ArrayBufferView or Blob or Document or DOMString or FormData or URLSearchParams)? body = null);
+    [RaisesException] void send(optional (ArrayBuffer or ArrayBufferView or Blob or Document or DOMString or FormData or LabeledObject or URLSearchParams)? body = null);
     void abort();
 
     // response

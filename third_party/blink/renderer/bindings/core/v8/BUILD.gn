@@ -106,6 +106,8 @@ bindings_core_generated_union_type_files = [
   "$bindings_core_v8_output_dir/uint8_clamped_array_or_uint16_array_or_float32_array.h",
   "$bindings_core_v8_output_dir/video_track_or_audio_track_or_text_track.cc",
   "$bindings_core_v8_output_dir/video_track_or_audio_track_or_text_track.h",
+  "$bindings_core_v8_output_dir/xhr_body.cc",
+  "$bindings_core_v8_output_dir/xhr_body.h",
 ]
 
 generated_core_testing_callback_function_files = [

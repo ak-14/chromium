@@ -57,6 +57,7 @@
     "Resource-Freshness",
     "Save-Data",
     "Sec-Required-CSP",
+    "Sec-COWL",
     "Server-Timing",
     "SourceMap",
     "Timing-Allow-Origin",

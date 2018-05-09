@@ -30,6 +30,11 @@
 #include "third_party/blink/renderer/bindings/core/v8/array_buffer_or_array_buffer_view_or_blob_or_document_or_string_or_form_data_or_url_search_params.h"
 #include "third_party/blink/renderer/bindings/core/v8/array_buffer_or_array_buffer_view_or_blob_or_usv_string.h"
 #include "third_party/blink/renderer/bindings/core/v8/exception_state.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_object_builder.h"
+#include "third_party/blink/renderer/bindings/core/v8/xhr_body.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
+#include "third_party/blink/renderer/core/cowl/label.h"
+#include "third_party/blink/renderer/core/cowl/labeled_object.h"
 #include "third_party/blink/renderer/core/dom/document_init.h"
 #include "third_party/blink/renderer/core/dom/document_parser.h"
 #include "third_party/blink/renderer/core/dom/dom_exception.h"
@@ -324,6 +329,10 @@ XMLHttpRequest::State XMLHttpRequest::readyState() const {
 
 v8::Local<v8::String> XMLHttpRequest::responseText(
     ExceptionState& exception_state) {
+
+  if (ResponseIsLabeledJSON())
+    return v8::Local<v8::String>();
+
   if (response_type_code_ != kResponseTypeDefault &&
       response_type_code_ != kResponseTypeText) {
     exception_state.ThrowDOMException(kInvalidStateError,
@@ -340,6 +349,9 @@ v8::Local<v8::String> XMLHttpRequest::responseText(
 
 v8::Local<v8::String> XMLHttpRequest::ResponseJSONSource() {
   DCHECK_EQ(response_type_code_, kResponseTypeJSON);
+
+  if (ResponseIsLabeledJSON())
+    return v8::Local<v8::String>();
 
   if (error_ || state_ != kDone)
     return v8::Local<v8::String>();
@@ -383,6 +395,9 @@ Document* XMLHttpRequest::responseXML(ExceptionState& exception_state) {
     return nullptr;
   }
 
+  if (ResponseIsLabeledJSON())
+    return nullptr;
+
   if (error_ || state_ != kDone)
     return nullptr;
 
@@ -403,6 +418,9 @@ Document* XMLHttpRequest::responseXML(ExceptionState& exception_state) {
 
 Blob* XMLHttpRequest::ResponseBlob() {
   DCHECK_EQ(response_type_code_, kResponseTypeBlob);
+
+  if (ResponseIsLabeledJSON())
+    return nullptr;
 
   // We always return null before kDone.
   if (error_ || state_ != kDone)
@@ -430,8 +448,22 @@ Blob* XMLHttpRequest::ResponseBlob() {
   return response_blob_;
 }
 
+v8::Local<v8::String> XMLHttpRequest::ResponseLabeledJSONSource() {
+  DCHECK_EQ(response_type_code_, kResponseTypeLabeledJSON);
+
+  if (!ResponseIsLabeledJSON())
+    return v8::Local<v8::String>();
+
+  if (error_ || state_ != kDone)
+    return v8::Local<v8::String>();
+  return response_text_.V8Value(isolate_);
+}
+
 DOMArrayBuffer* XMLHttpRequest::ResponseArrayBuffer() {
   DCHECK_EQ(response_type_code_, kResponseTypeArrayBuffer);
+
+  if (ResponseIsLabeledJSON())
+    return nullptr;
 
   if (error_ || state_ != kDone)
     return nullptr;
@@ -515,6 +547,8 @@ void XMLHttpRequest::setResponseType(const String& response_type,
     response_type_code_ = kResponseTypeText;
   } else if (response_type == "json") {
     response_type_code_ = kResponseTypeJSON;
+  } else if (response_type == "labeled-json") {
+    response_type_code_ = kResponseTypeLabeledJSON;
   } else if (response_type == "document") {
     response_type_code_ = kResponseTypeDocument;
   } else if (response_type == "blob") {
@@ -534,6 +568,8 @@ String XMLHttpRequest::responseType() {
       return "text";
     case kResponseTypeJSON:
       return "json";
+    case kResponseTypeLabeledJSON:
+      return "labeled-json";
     case kResponseTypeDocument:
       return "document";
     case kResponseTypeBlob:
@@ -767,7 +803,7 @@ bool XMLHttpRequest::InitSend(ExceptionState& exception_state) {
 }
 
 void XMLHttpRequest::send(
-    const ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrURLSearchParams&
+    const ArrayBufferOrArrayBufferViewOrBlobOrDocumentOrStringOrFormDataOrLabeledObjectOrURLSearchParams&
         body,
     ExceptionState& exception_state) {
   probe::willSendXMLHttpOrFetchNetworkRequest(GetExecutionContext(), Url());
@@ -799,6 +835,11 @@ void XMLHttpRequest::send(
 
   if (body.IsFormData()) {
     send(body.GetAsFormData(), exception_state);
+    return;
+  }
+
+  if (body.IsLabeledObject()) {
+    send(body.GetAsLabeledObject(), exception_state);
     return;
   }
 
@@ -889,6 +930,34 @@ void XMLHttpRequest::send(Blob* body, ExceptionState& exception_state) {
     } else {
       http_body->AppendBlob(body->Uuid(), body->GetBlobDataHandle());
     }
+  }
+
+  CreateRequest(std::move(http_body), exception_state);
+}
+
+void XMLHttpRequest::send(LabeledObject* lobj, ExceptionState& exception_state) {
+  NETWORK_DVLOG(1) << this << " send() LabeledObject " << lobj;
+
+  if (!InitSend(exception_state))
+    return;
+
+  if (!lobj->AllowSend(url_.GetString())) {
+    exception_state.ThrowSecurityError(
+        "Failed attempt to declassify labeled object without sufficient privileges");
+    return;
+  }
+
+  String body = lobj->ToLabeledJSON();
+
+  scoped_refptr<EncodedFormData> http_body;
+
+  if (!body.IsNull() && AreMethodAndURLValidForSend()) {
+    http_body = EncodedFormData::Create(
+        UTF8Encoding().Encode(body, WTF::kEntitiesForUnencodables));
+
+    UpdateContentTypeAndCharset("application/labeled-json;charset=UTF-8", "UTF-8");
+    String sec_cowl = lobj->GetDataHeader();
+    SetRequestHeaderInternal(HTTPNames::Sec_COWL, AtomicString(sec_cowl));
   }
 
   CreateRequest(std::move(http_body), exception_state);
@@ -1565,6 +1634,11 @@ bool XMLHttpRequest::ResponseIsHTML() const {
   return EqualIgnoringASCIICase(FinalResponseMIMEType(), "text/html");
 }
 
+bool XMLHttpRequest::ResponseIsLabeledJSON() const {
+  const AtomicString content_type = getResponseHeader(HTTPNames::Content_Type);
+  return content_type == "application/labeled-json";
+}
+
 int XMLHttpRequest::status() const {
   if (state_ == kUnsent || state_ == kOpened || error_)
     return 0;
@@ -1778,7 +1852,8 @@ void XMLHttpRequest::ParseDocumentChunk(const char* data, unsigned len) {
 std::unique_ptr<TextResourceDecoder> XMLHttpRequest::CreateDecoder() const {
   const TextResourceDecoderOptions decoder_options_for_utf8_plain_text(
       TextResourceDecoderOptions::kPlainTextContent, UTF8Encoding());
-  if (response_type_code_ == kResponseTypeJSON)
+  if (response_type_code_ == kResponseTypeJSON ||
+      response_type_code_ == kResponseTypeLabeledJSON)
     return TextResourceDecoder::Create(decoder_options_for_utf8_plain_text);
 
   String final_response_charset = FinalResponseCharset();
@@ -1811,6 +1886,7 @@ std::unique_ptr<TextResourceDecoder> XMLHttpRequest::CreateDecoder() const {
       }
       return TextResourceDecoder::Create(decoder_options_for_xml);
     case kResponseTypeJSON:
+    case kResponseTypeLabeledJSON:
     case kResponseTypeBlob:
     case kResponseTypeArrayBuffer:
       NOTREACHED();
@@ -1843,6 +1919,7 @@ void XMLHttpRequest::DidReceiveData(const char* data, unsigned len) {
   } else if (response_type_code_ == kResponseTypeDefault ||
              response_type_code_ == kResponseTypeText ||
              response_type_code_ == kResponseTypeJSON ||
+             response_type_code_ == kResponseTypeLabeledJSON ||
              response_type_code_ == kResponseTypeDocument) {
     if (!decoder_)
       decoder_ = CreateDecoder();
