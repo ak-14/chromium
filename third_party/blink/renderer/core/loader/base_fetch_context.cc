@@ -126,6 +126,14 @@ void BaseFetchContext::AddCSPHeaderIfNecessary(Resource::Type type,
     request.AddHTTPHeaderField("CSP", "active");
 }
 
+void BaseFetchContext::AddCOWLHeader(Resource::Type type,
+                                     ResourceRequest& request) {
+  const COWL* cowl = GetCOWL();
+  if (!cowl)
+    return;
+  cowl->AddCtxHeader(request);
+}
+
 ResourceRequestBlockedReason BaseFetchContext::CheckCSPForRequest(
     WebURLRequest::RequestContext request_context,
     const KURL& url,
@@ -158,6 +166,25 @@ ResourceRequestBlockedReason BaseFetchContext::CheckCSPForRequestInternal(
   }
   return ResourceRequestBlockedReason::kNone;
 }
+
+ResourceRequestBlockedReason BaseFetchContext::CheckCOWLForRequest(const KURL& url) const {
+  const COWL* cowl = GetCOWL();
+  if (cowl && !cowl->AllowRequest(url))
+    return ResourceRequestBlockedReason::kCOWL;
+
+  return ResourceRequestBlockedReason::kNone;
+}
+
+ResourceRequestBlockedReason BaseFetchContext::CheckCOWLForResponse(
+    const ResourceRequest& request,
+    const ResourceResponse& response) const {
+  const COWL* cowl = GetCOWL();
+  if (cowl && !cowl->AllowResponse(request, response))
+    return ResourceRequestBlockedReason::kCOWL;
+
+  return ResourceRequestBlockedReason::kNone;
+}
+
 
 ResourceRequestBlockedReason BaseFetchContext::CanRequestInternal(
     Resource::Type type,
@@ -248,6 +275,11 @@ ResourceRequestBlockedReason BaseFetchContext::CanRequestInternal(
           ContentSecurityPolicy::CheckHeaderType::kCheckEnforce) ==
       ResourceRequestBlockedReason::kCSP) {
     return ResourceRequestBlockedReason::kCSP;
+  }
+
+  if (CheckCOWLForRequest(url) ==
+      ResourceRequestBlockedReason::kCOWL) {
+    return ResourceRequestBlockedReason::kCOWL;
   }
 
   if (type == Resource::kScript || type == Resource::kImportResource) {

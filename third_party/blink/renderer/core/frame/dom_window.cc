@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "third_party/blink/renderer/bindings/core/v8/window_proxy_manager.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/events/message_event.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
@@ -222,6 +223,18 @@ void DOMWindow::postMessage(scoped_refptr<SerializedScriptValue> message,
         source->GetFrame(),
         WebFeature::kPostMessageOutgoingWouldBeBlockedByConnectSrc);
   }
+
+  COWL* src_cowl = source->GetFrame()->GetSecurityContext()->GetCOWL();
+  Label* conf = src_cowl->EffectiveConfidentiality();
+  Label* integrity = src_cowl->EffectiveIntegrity();
+
+  COWL* dst_cowl = GetFrame()->GetSecurityContext()->GetCOWL();
+  Privilege* dst_priv = dst_cowl->GetPrivilege();
+  Label* dst_conf = dst_cowl->GetConfidentiality()->Upgrade(dst_priv);
+  Label* dst_integrity = dst_cowl->GetIntegrity();
+
+  if (!dst_conf->subsumes(conf) || !integrity->subsumes(dst_integrity))
+    return;
 
   MessageEvent* event = MessageEvent::Create(
       std::move(channels), std::move(message), source_origin, String(), source);

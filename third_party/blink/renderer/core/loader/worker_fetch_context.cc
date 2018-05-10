@@ -229,6 +229,11 @@ const ContentSecurityPolicy* WorkerFetchContext::GetContentSecurityPolicy()
   return global_scope_->GetContentSecurityPolicy();
 }
 
+const COWL* WorkerFetchContext::GetCOWL()
+    const {
+  return global_scope_->GetCOWL();
+}
+
 void WorkerFetchContext::AddConsoleMessage(ConsoleMessage* message) const {
   return global_scope_->AddConsoleMessage(message);
 }

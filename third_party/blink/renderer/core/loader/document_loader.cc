@@ -33,6 +33,7 @@
 #include "third_party/blink/public/platform/modules/serviceworker/web_service_worker_network_provider.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/web/web_history_commit_type.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/document_parser.h"
 #include "third_party/blink/renderer/core/dom/events/event.h"
@@ -170,6 +171,7 @@ void DocumentLoader::Trace(blink::Visitor* visitor) {
   visitor->Trace(document_load_timing_);
   visitor->Trace(application_cache_host_);
   visitor->Trace(content_security_policy_);
+  visitor->Trace(cowl_);
   RawResourceClient::Trace(visitor);
 }
 
@@ -572,6 +574,7 @@ void DocumentLoader::CancelLoadAfterCSPDenied(
   // https://crbug.com/555418.
   ClearResource();
   content_security_policy_.Clear();
+  cowl_.Clear();
   KURL blocked_url = SecurityOrigin::UrlWithUniqueSecurityOrigin();
   original_request_.SetURL(blocked_url);
   request_.SetURL(blocked_url);
@@ -641,6 +644,17 @@ void DocumentLoader::ResponseReceived(
         CancelLoadAfterCSPDenied(response);
         return;
       }
+    }
+  }
+
+  const AtomicString& sec_cowl = response.HttpHeaderField(HTTPNames::Sec_COWL);
+  if (!sec_cowl.IsEmpty()) {
+    cowl_ = COWL::Create();
+    cowl_->SetupSelf(*SecurityOrigin::Create(Url()));
+    if (!cowl_->ProcessCtxHeader(frame_, sec_cowl, response.Url())) {
+      CancelLoadAfterCSPDenied(response);
+      cowl_.Clear();
+      return;
     }
   }
 
@@ -905,6 +919,9 @@ void DocumentLoader::DidInstallNewDocument(Document* document) {
   document->SetReadyState(Document::kLoading);
   if (content_security_policy_) {
     document->InitContentSecurityPolicy(content_security_policy_.Release());
+  }
+  if (cowl_) {
+    document->InitCOWL(cowl_.Release());
   }
 
   if (history_item_ && IsBackForwardLoadType(load_type_))

@@ -26,6 +26,9 @@
 #include "third_party/blink/renderer/core/execution_context/security_context.h"
 #include "third_party/blink/renderer/core/inspector/console_types.h"
 #include "third_party/blink/renderer/platform/heap/handle.h"
+#include "third_party/blink/renderer/platform/loader/fetch/resource_request.h"
+#include "third_party/blink/renderer/platform/loader/fetch/resource_response.h"
+#include "third_party/blink/renderer/platform/weborigin/security_violation_reporting_policy.h"
 
 namespace blink {
 
@@ -53,6 +56,14 @@ class CORE_EXPORT COWL final : public GarbageCollectedFinalized<COWL> {
 
   Label* EffectiveConfidentiality() const;
   Label* EffectiveIntegrity() const;
+
+  bool AllowRequest(const KURL&) const;
+  bool AllowResponse(const ResourceRequest&,
+                     const ResourceResponse&) const;
+  void AddCtxHeader(ResourceRequest&) const;
+  bool ProcessCtxHeader(const LocalFrame*,
+                        const AtomicString&,
+                        const KURL&);
 
   void LogToConsole(const String& message, MessageLevel = kErrorMessageLevel) const;
   void LogToConsole(ConsoleMessage*, LocalFrame* = nullptr) const;

@@ -37,6 +37,7 @@
 #include "third_party/blink/public/web/web_global_object_reuse_policy.h"
 #include "third_party/blink/renderer/bindings/core/v8/source_location.h"
 #include "third_party/blink/renderer/core/core_export.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/dom/viewport_description.h"
 #include "third_party/blink/renderer/core/dom/weak_identifier_map.h"
 #include "third_party/blink/renderer/core/frame/csp/content_security_policy.h"
@@ -375,6 +376,7 @@ class CORE_EXPORT DocumentLoader
       service_worker_network_provider_;
 
   Member<ContentSecurityPolicy> content_security_policy_;
+  Member<COWL> cowl_;
   ClientHintsPreferences client_hints_preferences_;
   InitialScrollState initial_scroll_state_;
 

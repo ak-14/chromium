@@ -64,6 +64,7 @@ class WorkerFetchContext final : public BaseFetchContext {
   const SecurityOrigin* GetParentSecurityOrigin() const override;
   Optional<mojom::IPAddressSpace> GetAddressSpace() const override;
   const ContentSecurityPolicy* GetContentSecurityPolicy() const override;
+  const COWL* GetCOWL() const override;
   void AddConsoleMessage(ConsoleMessage*) const override;
 
   // FetchContext implementation:

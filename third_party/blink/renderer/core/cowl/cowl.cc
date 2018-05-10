@@ -114,6 +114,140 @@ Label* COWL::EffectiveIntegrity() const {
   return integrity_->Upgrade(privilege_);
 }
 
+bool COWL::AllowRequest(const KURL& url) const {
+  if (!enabled_)
+    return true;
+
+  String origin = SecurityOrigin::Create(url)->ToString();
+  Label* conf = EffectiveConfidentiality();
+  Label* dst_conf = Label::Create(origin);
+  if (dst_conf->subsumes(conf))
+    return true;
+
+  String message = "COWL::context labeled " + conf->toString() +
+                   " attempted to leak data to a remote server: " + origin;
+  LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+        kErrorMessageLevel,
+        message));
+  return false;
+}
+
+bool COWL::AllowResponse(const ResourceRequest& request,
+                         const ResourceResponse& response) const {
+  const AtomicString& sec_cowl = response.HttpHeaderField(HTTPNames::Sec_COWL);
+  if (sec_cowl.IsEmpty())
+    return true;
+
+  WebURLRequest::RequestContext request_context = request.GetRequestContext();
+  if (request_context == WebURLRequest::kRequestContextLocation)
+    return true;
+
+  CommaDelimitedHeaderSet headers;
+  ParseCommaDelimitedHeader(sec_cowl, headers);
+  String data_header;
+  for (String header : headers) {
+    if (header.StartsWith("data"))
+      data_header = header;
+  }
+
+  String self = SecurityOrigin::Create(response.Url())->ToString();
+  Label* conf; Label* integrity;
+  COWLParser::ParseLabeledDataHeader(data_header, self, conf, integrity);
+
+  if (!conf || !integrity) {
+    String message = "COWL::The server supplied a malformed Sec-COWL header";
+    LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+          kErrorMessageLevel,
+          message));
+    return false;
+  }
+
+  Label* effective_conf = conf->Downgrade(privilege_);
+  if (confidentiality_->subsumes(effective_conf) && integrity->subsumes(EffectiveIntegrity()))
+    return true;
+
+  String message = "COWL::Current context's label is not allowed to receive "
+                   "data with server specified labels";
+  LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+        kErrorMessageLevel,
+        message));
+  return false;
+}
+
+void COWL::AddCtxHeader(ResourceRequest& request) const {
+  if (!enabled_ || request.GetReferrerPolicy() == kReferrerPolicyNever)
+    return;
+
+  String ctx_header = String::Format(
+      "ctx-confidentiality %s; "
+      "ctx-integrity %s; "
+      "ctx-privilege %s",
+      confidentiality_->toString().Utf8().data(),
+      integrity_->toString().Utf8().data(),
+      privilege_->asLabel()->toString().Utf8().data()
+      );
+  request.AddHTTPHeaderField(HTTPNames::Sec_COWL, AtomicString(ctx_header));
+}
+
+bool COWL::ProcessCtxHeader(const LocalFrame* frame,
+                            const AtomicString& sec_cowl,
+                            const KURL& url) {
+  if (sec_cowl.IsEmpty())
+    return true;
+
+  if (!IsCOWLAttributeEnabled(frame)) {
+    String message = "COWL::The application attempted to embed confined content outside a cowl iframe";
+    LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+          kErrorMessageLevel,
+          message));
+    return false;
+  }
+
+  CommaDelimitedHeaderSet headers;
+  ParseCommaDelimitedHeader(sec_cowl, headers);
+  String ctx_header;
+  for (String header : headers) {
+    if (header.StartsWith("ctx"))
+      ctx_header = header;
+  }
+
+  String self = SecurityOrigin::Create(url)->ToString();
+  Label* conf; Label* integrity; Privilege* priv;
+  COWLParser::ParseLabeledContextHeader(ctx_header, self, conf, integrity, priv);
+
+  if (!conf || !integrity || !priv) {
+    String message = "COWL::The server supplied a malformed Sec-COWL header";
+    LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+          kErrorMessageLevel,
+          message));
+    return false;
+  }
+
+  if (!privilege_->asLabel()->subsumes(priv->asLabel())) {
+    String message = "COWL::The server supplied a privilege that it is not trusted for";
+    LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+          kErrorMessageLevel,
+          message));
+    return false;
+  }
+
+  Label* effective_int = integrity_->Upgrade(privilege_);
+  if (!effective_int->subsumes(integrity)) {
+    String message = "COWL::The server supplied an integrity label that it is not trusted for";
+    LogToConsole(ConsoleMessage::Create(kSecurityMessageSource,
+          kErrorMessageLevel,
+          message));
+    return false;
+  }
+
+  confidentiality_ = conf;
+  integrity_ = integrity;
+  privilege_ = priv;
+  enabled_ = true;
+
+  return true;
+}
+
 void COWL::LogToConsole(const String& message, MessageLevel level) const {
   LogToConsole(ConsoleMessage::Create(kSecurityMessageSource, level, message));
 }

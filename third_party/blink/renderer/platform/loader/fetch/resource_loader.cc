@@ -597,6 +597,13 @@ void ResourceLoader::DidReceiveResponse(
     }
   }
 
+  blocked_reason = Context().CheckCOWLForResponse(initial_request, response);
+  if (blocked_reason != ResourceRequestBlockedReason::kNone) {
+    HandleError(ResourceError::CancelledDueToAccessCheckError(
+          response.Url(), blocked_reason));
+    return;
+  }
+
   // FrameType never changes during the lifetime of a request.
   Context().DispatchDidReceiveResponse(
       resource_->Identifier(), response, initial_request.GetFrameType(),

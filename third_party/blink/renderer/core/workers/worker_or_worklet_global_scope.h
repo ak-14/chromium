@@ -33,6 +33,7 @@ class CORE_EXPORT WorkerOrWorkletGlobalScope : public EventTargetWithInlineData,
  public:
   using SecurityContext::GetSecurityOrigin;
   using SecurityContext::GetContentSecurityPolicy;
+  using SecurityContext::GetCOWL;
 
   WorkerOrWorkletGlobalScope(v8::Isolate*,
                              WorkerClients*,

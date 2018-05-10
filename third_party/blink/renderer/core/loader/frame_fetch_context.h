@@ -33,6 +33,7 @@
 
 #include "base/single_thread_task_runner.h"
 #include "third_party/blink/renderer/core/core_export.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/frame/csp/content_security_policy.h"
 #include "third_party/blink/renderer/core/loader/base_fetch_context.h"
 #include "third_party/blink/renderer/platform/heap/handle.h"
@@ -228,6 +229,7 @@ class CORE_EXPORT FrameFetchContext final : public BaseFetchContext {
   const SecurityOrigin* GetParentSecurityOrigin() const override;
   Optional<mojom::IPAddressSpace> GetAddressSpace() const override;
   const ContentSecurityPolicy* GetContentSecurityPolicy() const override;
+  const COWL* GetCOWL() const override;
   void AddConsoleMessage(ConsoleMessage*) const override;
 
   ContentSettingsClient* GetContentSettingsClient() const;

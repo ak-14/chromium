@@ -8,6 +8,7 @@
 #include "third_party/blink/public/mojom/net/ip_address_space.mojom-blink.h"
 #include "third_party/blink/public/platform/web_url_request.h"
 #include "third_party/blink/renderer/core/core_export.h"
+#include "third_party/blink/renderer/core/cowl/cowl.h"
 #include "third_party/blink/renderer/core/frame/csp/content_security_policy.h"
 #include "third_party/blink/renderer/core/frame/web_feature_forward.h"
 #include "third_party/blink/renderer/platform/heap/handle.h"
@@ -44,6 +45,11 @@ class CORE_EXPORT BaseFetchContext : public FetchContext {
       const ResourceLoaderOptions&,
       SecurityViolationReportingPolicy,
       ResourceRequest::RedirectStatus) const override;
+  ResourceRequestBlockedReason CheckCOWLForRequest(
+      const KURL&) const override;
+  ResourceRequestBlockedReason CheckCOWLForResponse(
+      const ResourceRequest&,
+      const ResourceResponse&) const override;
   ResourceRequestBlockedReason CheckResponseNosniff(
       WebURLRequest::RequestContext,
       const ResourceResponse&) const override;
@@ -92,12 +98,14 @@ class CORE_EXPORT BaseFetchContext : public FetchContext {
   virtual const SecurityOrigin* GetParentSecurityOrigin() const = 0;
   virtual Optional<mojom::IPAddressSpace> GetAddressSpace() const = 0;
   virtual const ContentSecurityPolicy* GetContentSecurityPolicy() const = 0;
+  virtual const COWL* GetCOWL() const = 0;
 
   virtual void AddConsoleMessage(ConsoleMessage*) const = 0;
 
   // Utility method that can be used to implement other methods.
   void PrintAccessDeniedMessage(const KURL&) const;
   void AddCSPHeaderIfNecessary(Resource::Type, ResourceRequest&);
+  void AddCOWLHeader(Resource::Type, ResourceRequest&);
 
  private:
   // Utility methods that are used in default implement for CanRequest,

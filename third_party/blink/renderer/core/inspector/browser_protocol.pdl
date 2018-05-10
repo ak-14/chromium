@@ -3455,6 +3455,7 @@ domain Network
   type BlockedReason extends string
     enum
       csp
+      cowl
       mixed-content
       origin
       inspector

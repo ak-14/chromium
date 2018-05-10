@@ -191,6 +191,15 @@ class PLATFORM_EXPORT FetchContext
       ResourceRequest::RedirectStatus) const {
     return ResourceRequestBlockedReason::kOther;
   }
+  virtual ResourceRequestBlockedReason CheckCOWLForRequest(
+      const KURL&) const {
+    return ResourceRequestBlockedReason::kOther;
+  }
+  virtual ResourceRequestBlockedReason CheckCOWLForResponse(
+      const ResourceRequest&,
+      const ResourceResponse&) const {
+    return ResourceRequestBlockedReason::kOther;
+  }
   virtual ResourceRequestBlockedReason CheckResponseNosniff(
       WebURLRequest::RequestContext,
       const ResourceResponse&) const {

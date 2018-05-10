@@ -100,6 +100,9 @@ class MockBaseFetchContext final : public BaseFetchContext {
   const ContentSecurityPolicy* GetContentSecurityPolicy() const override {
     return execution_context_->GetContentSecurityPolicy();
   }
+  const COWL* GetCOWL() const override {
+    return execution_context_->GetCOWL();
+  }
   void AddConsoleMessage(ConsoleMessage*) const override {}
 
   void Trace(blink::Visitor* visitor) override {
