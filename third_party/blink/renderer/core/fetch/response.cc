@@ -443,6 +443,10 @@ String Response::MimeType() const {
   return response_->MimeType();
 }
 
+String Response::Origin() const {
+  return SecurityOrigin::CreateFromString(url())->ToString();
+}
+
 String Response::ContentType() const {
   String result;
   response_->HeaderList()->Get(HTTPNames::Content_Type, result);

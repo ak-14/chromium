@@ -7,6 +7,7 @@
 #include "third_party/blink/public/platform/modules/serviceworker/web_service_worker_request.h"
 #include "third_party/blink/public/platform/web_url_request.h"
 #include "third_party/blink/renderer/bindings/core/v8/dictionary.h"
+#include "third_party/blink/renderer/core/cowl/labeled_object.h"
 #include "third_party/blink/renderer/core/dom/abort_signal.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/fetch/body_stream_buffer.h"
@@ -418,6 +419,18 @@ Request* Request::CreateRequestWithRequestOrString(
       r->getHeaders()->append(HTTPNames::Content_Type, init.ContentType(),
                               exception_state);
     }
+
+    LabeledObject* lobj = init.GetLabeledObject();
+    if (init.ContentType() == "application/labeled-json" && lobj) {
+      if (!lobj->AllowSend(r->Origin())) {
+        exception_state.ThrowSecurityError(
+            "Failed attempt to declassify labeled object without sufficient privileges");
+        return nullptr;
+      }
+      r->getHeaders()->set(HTTPNames::Content_Type, "application/labeled-json", exception_state);
+      r->getHeaders()->AppendCOWL(lobj->GetDataHeader());
+    }
+
     if (exception_state.HadException())
       return nullptr;
   }
@@ -786,6 +799,10 @@ void Request::PopulateWebServiceWorkerRequest(
 
 String Request::MimeType() const {
   return request_->MimeType();
+}
+
+String Request::Origin() const {
+  return SecurityOrigin::Create(url())->ToString();
 }
 
 String Request::ContentType() const {

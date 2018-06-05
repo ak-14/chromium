@@ -268,6 +268,10 @@ void Headers::FillWith(const Vector<std::pair<String, String>>& object,
   }
 }
 
+void Headers::AppendCOWL(const String& sec_cowl) {
+  header_list_->Append(HTTPNames::Sec_COWL, sec_cowl);
+}
+
 Headers::Headers()
     : header_list_(FetchHeaderList::Create()), guard_(kNoneGuard) {}
 

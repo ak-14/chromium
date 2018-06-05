@@ -13,6 +13,7 @@
     [CallWith=ScriptState, NewObject] Promise<Blob> blob();
     [CallWith=ScriptState, NewObject] Promise<FormData> formData();
     [CallWith=ScriptState, NewObject] Promise<JSON> json();
+    [CallWith=ScriptState, NewObject] Promise<LabeledObject> labeledJson();
     [CallWith=ScriptState, NewObject] Promise<USVString> text();
 
     // body attribute is defined in sub-interfaces, because the IDL processor

@@ -99,6 +99,7 @@ class CORE_EXPORT Request final : public Body {
 
   String ContentType() const override;
   String MimeType() const override;
+  String Origin() const override;
   void RefreshBody(ScriptState*);
 
   const Member<FetchRequestData> request_;

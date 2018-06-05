@@ -766,7 +766,8 @@ void FetchManager::Loader::PerformHTTPFetch() {
     // Since |fetch_request_data_|'s headers are populated with either of the
     // "request" guard or "request-no-cors" guard, we can assume that none of
     // the headers have a name listed in the forbidden header names.
-    DCHECK(!CORS::IsForbiddenHeaderName(header.first));
+    if (header.first != "Sec-COWL")
+      DCHECK(!CORS::IsForbiddenHeaderName(header.first));
 
     request.AddHTTPHeaderField(AtomicString(header.first),
                                AtomicString(header.second));

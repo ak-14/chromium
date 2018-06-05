@@ -43,6 +43,9 @@ class CORE_EXPORT FetchDataLoader
     }
     virtual void DidFetchDataLoadedFormData(FormData*) { NOTREACHED(); }
     virtual void DidFetchDataLoadedString(const String&) { NOTREACHED(); }
+    virtual void DidFetchDataLoadedLabeledJson(const String&, const String&) {
+      NOTREACHED();
+    }
     // This is called after all data are read from |handle| and written
     // to |out_data_pipe|, and |out_data_pipe| is closed or aborted.
     virtual void DidFetchDataLoadedDataPipe() { NOTREACHED(); }
@@ -65,6 +68,7 @@ class CORE_EXPORT FetchDataLoader
   static FetchDataLoader* CreateLoaderAsFormData(
       const String& multipart_boundary);
   static FetchDataLoader* CreateLoaderAsString();
+  static FetchDataLoader* CreateLoaderAsLabeledJson(const String& origin);
   static FetchDataLoader* CreateLoaderAsDataPipe(
       mojo::ScopedDataPipeProducerHandle out_data_pipe,
       scoped_refptr<base::SingleThreadTaskRunner>);

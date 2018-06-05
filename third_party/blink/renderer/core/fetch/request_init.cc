@@ -13,7 +13,9 @@
 #include "third_party/blink/renderer/bindings/core/v8/v8_array_buffer_view.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_blob.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_form_data.h"
+#include "third_party/blink/renderer/bindings/core/v8/v8_labeled_object.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_url_search_params.h"
+#include "third_party/blink/renderer/core/cowl/labeled_object.h"
 #include "third_party/blink/renderer/core/fetch/blob_bytes_consumer.h"
 #include "third_party/blink/renderer/core/fetch/form_data_bytes_consumer.h"
 #include "third_party/blink/renderer/core/fetch/headers.h"
@@ -269,6 +271,10 @@ void RequestInit::SetUpBody(ExecutionContext* context,
     content_type_ = AtomicString("multipart/form-data; boundary=") +
                     form_data->Boundary().data();
     body_ = new FormDataBytesConsumer(context, std::move(form_data));
+  } else if (V8LabeledObject::hasInstance(v8_body, isolate)) {
+    lobj_ = V8LabeledObject::ToImpl(v8_body.As<v8::Object>());
+    content_type_ = "application/labeled-json";
+    body_ = new FormDataBytesConsumer(lobj_->ToLabeledJSON());
   } else if (V8URLSearchParams::hasInstance(v8_body, isolate)) {
     scoped_refptr<EncodedFormData> form_data =
         V8URLSearchParams::ToImpl(v8_body.As<v8::Object>())

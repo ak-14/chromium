@@ -21,6 +21,7 @@ class BytesConsumer;
 class Dictionary;
 class ExecutionContext;
 class ExceptionState;
+class LabeledObject;
 
 // FIXME: Use IDL dictionary instead of this class.
 class RequestInit {
@@ -33,6 +34,7 @@ class RequestInit {
   const HeadersInit& GetHeaders() const { return headers_; }
   const String& ContentType() const { return content_type_; }
   BytesConsumer* GetBody() { return body_; }
+  LabeledObject* GetLabeledObject() { return lobj_; }
   const Referrer& GetReferrer() const { return referrer_; }
   const String& Mode() const { return mode_; }
   const String& Credentials() const { return credentials_; }
@@ -62,6 +64,7 @@ class RequestInit {
   HeadersInit headers_;
   String content_type_;
   Member<BytesConsumer> body_;
+  Member<LabeledObject> lobj_;
   Referrer referrer_;
   String mode_;
   String credentials_;

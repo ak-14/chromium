@@ -59,6 +59,11 @@ class BodyStreamBuffer::LoaderClient final
     client_->DidFetchDataLoadedString(string);
   }
 
+  void DidFetchDataLoadedLabeledJson(const String& string, const String& origin) override {
+    buffer_->EndLoading();
+    client_->DidFetchDataLoadedLabeledJson(string, origin);
+  }
+
   void DidFetchDataLoadedDataPipe() override {
     buffer_->EndLoading();
     client_->DidFetchDataLoadedDataPipe();

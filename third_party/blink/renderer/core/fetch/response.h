@@ -93,6 +93,7 @@ class CORE_EXPORT Response final : public Body {
 
   String ContentType() const override;
   String MimeType() const override;
+  String Origin() const override;
   String InternalMIMEType() const;
 
   const Vector<KURL>& InternalURLList() const;

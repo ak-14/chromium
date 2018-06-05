@@ -58,6 +58,7 @@ class CORE_EXPORT Headers final : public ScriptWrappable,
   FetchHeaderList* HeaderList() const { return header_list_; }
   void Trace(blink::Visitor*) override;
 
+  void AppendCOWL(const String& sec_cowl);
  private:
   Headers();
   // Shares the FetchHeaderList. Called when creating a Request or Response.
