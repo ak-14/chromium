@@ -1,0 +1,10 @@
+<script>
+'use strict';
+
+window.onmessage = event => {
+  const { source, data } = event;
+  source.postMessage('hello', '*');
+  COWL.confidentiality = new Label('https://a.com');
+  source.postMessage('secret', '*');
+}
+</script>

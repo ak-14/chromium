@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>COWL Label</title>
+<link rel=help href="https://w3c.github.io/webappsec-cowl/#framework-labels">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script>
+'use strict';
+
+test(function() {
+  assert_throws(new TypeError(), function() { new Label("http:/invalid") },
+    "constructor throws with invalid principal");
+}, "Label constructor");
+
+test(function() {
+  const empty = new Label();
+  const a1 = new Label("https://a.com");
+  assert_true(empty.equals(empty), "The empty label should be equal to itself");
+  assert_false(a1.equals(empty), "A label should not be equal to the empty label");
+  assert_false(empty.equals(a1), "A label should not be equal to the empty label");
+
+  const a2 = new Label("https://a.com");
+  assert_true(a1.equals(a1), "A label should be equal to itself");
+  assert_true(a1.equals(a2), "A label should be equal to another if it contains the same principals");
+
+  const b = new Label("https://b.com");
+  assert_false(a1.equals(b), "Two labels with different principals should not be equal");
+  assert_false(b.equals(a1), "Two labels with different principals should not be equal");
+
+  const aANDb1 = (new Label("https://a.com")).and("https://b.com");
+  const aANDb2 = (new Label("https://a.com")).and("https://b.com");
+  assert_true(aANDb1.equals(aANDb2), "A label should be equal to another if it contains the same principals");
+
+  const aORb1 = (new Label("https://a.com")).or("https://b.com");
+  const aORb2 = (new Label("https://a.com")).or("https://b.com");
+  assert_true(aORb1.equals(aORb2), "A label should be equal to another if it contains the same principals");
+
+  assert_false(aANDb1.equals(a1), "Two labels with different principals should not be equal");
+  assert_false(aORb1.equals(a1), "Two labels with different principals should not be equal");
+}, "Label equals()");
+
+test(function() {
+  const empty = new Label();
+  const a = new Label("https://a.com");
+  assert_false(empty.subsumes(a), "public data is not more sensitive/trustworthy than a.com");
+  assert_true(a.subsumes(empty), "a.com data is more sensitive/trustworthy than public data");
+  assert_true(a.subsumes(a), "A label should subsume itself");
+
+  const b = new Label("https://b.com");
+  assert_false(a.subsumes(b), "A label should not subsume another if they contain different principals");
+  assert_false(b.subsumes(a), "A label should not subsume another if they contain different principals");
+
+  const aANDb = (new Label("https://a.com")).and("https://b.com");
+  assert_true(aANDb.subsumes(a), "a.com and b.com data is more sensitive/trustworthy than a.com data");
+  assert_true(aANDb.subsumes(b), "a.com and b.com data is more sensitive/trustworthy than b.com data");
+  assert_false(a.subsumes(aANDb), "a.com and b.com data is more sensitive/trustworthy than a.com data");
+  assert_false(b.subsumes(aANDb), "a.com and b.com data is more sensitive/trustworthy than b.com data");
+
+  const aORb = (new Label("https://a.com")).or("https://b.com");
+  assert_true(a.subsumes(aORb), "a.com data is more sensitive/trustworthy than a.com or b.com data");
+  assert_true(b.subsumes(aORb), "b.com data is more sensitive/trustworthy than a.com or b.com data");
+  assert_false(aORb.subsumes(a), "a.com data is more sensitive/trustworthy than a.com or b.com data");
+  assert_false(aORb.subsumes(b), "b.com data is more sensitive/trustworthy than a.com or b.com data");
+
+  const priv1 = new FreshPrivilege();
+  const priv1Label = priv1.asLabel();
+  const priv2 = new FreshPrivilege();
+  const priv2Label = priv2.asLabel();
+  assert_false(priv1Label.subsumes(priv2Label), "A label should not subsume another if they contain different principals");
+  assert_true(priv1Label.subsumes(priv2Label, priv2), "A label subsumes another if given the privilege for it");
+}, "Label subsumes()");
+
+test(function() {
+  const empty = new Label();
+  const a = new Label("https://a.com");
+  assert_true(empty.and("https://a.com").equals(a), "Label should be equal to the nonempty label used")
+
+  const b = new Label("https://b.com");
+  const aANDb = a.and(b);
+  assert_true(a.equals(new Label("https://a.com")), "Labels are immutable and should not be altered by and() or or()")
+  assert_true(b.equals(new Label("https://b.com")), "Labels are immutable and should not be altered by and() or or()")
+
+  assert_true(aANDb.subsumes(a), "New label from and() subsumes old ones");
+  assert_true(aANDb.subsumes(b), "New label from and() subsumes old ones");
+
+  const aORb = (new Label("https://a.com")).or("https://b.com");
+  const a2 = a.and(aORb)
+  assert_true(a2.equals(a), "and() returns label in normal form");
+  assert_equals(a2.toString(), "https://a.com");
+
+  assert_throws(new TypeError(), function() { (new Label()).and(Label("http:/invalid")) },
+    "and() re-throws constructor exception with invalid principal");
+}, "Label and()");
+
+test(function() {
+  const empty = new Label();
+  const a = new Label("https://a.com");
+  assert_true(empty.or("https://a.com").equals(new Label()), "Label should be equal to the nonempty label used")
+
+  const b = new Label("https://b.com");
+  const aORb = a.or(b);
+  assert_true(a.equals(new Label("https://a.com")), "Labels are immutable and should not be altered by and() or or()")
+  assert_true(b.equals(new Label("https://b.com")), "Labels are immutable and should not be altered by and() or or()")
+
+  assert_false(aORb.subsumes(a), "New label from or() does not subsume old ones");
+  assert_false(aORb.subsumes(b), "New label from or() does not subsume old ones");
+  assert_true(a.subsumes(aORb), "Old label subsumes new ones from or()");
+  assert_true(b.subsumes(aORb), "Old label subsumes new ones from or()");
+
+  assert_throws(new TypeError(), function() { (new Label()).or(Label("http:/invalid")) },
+    "or() re-throws constructor exception with invalid principal");
+}, "Label or()");
+
+test(function() {
+  const empty = new Label();
+  assert_equals(empty.toString(), "'none'");
+
+  const a = new Label("https://a.com");
+  assert_equals(a.toString(), "https://a.com");
+
+  const aANDb = (new Label("https://a.com")).and("https://b.com");
+  assert_equals(aANDb.toString(), "(https://a.com) AND (https://b.com)");
+
+  const aORb = (new Label("https://a.com")).or("https://b.com");
+  assert_equals(aORb.toString(), "https://a.com OR https://b.com");
+
+  const aORbANDc = aORb.and(new Label("https://c.com"));
+  assert_equals(aORbANDc.toString(), "(https://a.com OR https://b.com) AND (https://c.com)");
+
+  const aANDbORc = aANDb.or(new Label("https://c.com"))
+  assert_equals(aANDbORc.toString(), "(https://a.com OR https://c.com) AND (https://b.com OR https://c.com)");
+
+  const cORaANDb = (new Label("https://c.com")).or(aANDb)
+  assert_equals(aANDbORc.toString(), "(https://a.com OR https://c.com) AND (https://b.com OR https://c.com)");
+}, "Label toString()");
+</script>

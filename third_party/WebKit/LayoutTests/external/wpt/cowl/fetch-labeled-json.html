@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Fetch API: send and receive LabeledObjects</title>
+<link rel=help href="https://w3c.github.io/webappsec-cowl/">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+
+<script>
+'use strict';
+
+promise_test(function(test) {
+  return fetch("./resources/echo.py", {
+    body: new LabeledObject({'password': 12345}, {confidentiality: new Label(window.location.origin)}),
+    headers: { 'Content-Type': 'application/labeled-json' },
+    method: 'POST'
+  }).then(function(resp) {
+    assert_equals(resp.status, 200, "HTTP status is 200");
+    assert_equals(resp.statusText, "OK", "HTTP statusText is OK");
+    assert_equals(resp.type, "basic", "response type is basic");
+    assert_equals(resp.headers.get("Content-Type"), "application/labeled-json",
+      "Content-Type is " + resp.headers.get("Content-Type"));
+    return resp.labeledJson();
+  }).then(function(lobj) {
+    assert_true(lobj instanceof LabeledObject, "LabeledObject from Fetch Response");
+    assert_equals(lobj.protectedObject.password, 12345, 'response.protectedObject');
+    assert_equals(lobj.confidentiality.toString(), window.location.origin, 'response.confidentiality');
+    assert_equals(lobj.integrity.toString(), "'none'", 'response.integrity');
+  });
+}, "Fetch API send and receive LabeledObjects");
+
+</script>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>COWL Confinement Enforcement (Web Messaging)</title>
+<link rel=help href="https://w3c.github.io/webappsec-cowl/#modifications-to-web-messaging">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+
+<iframe id="iframe" src="webmessaging-iframe.html" cowl></iframe>
+
+<script>
+'use strict';
+
+const iframe = document.getElementById('iframe');
+
+const msgs = []
+
+const t = async_test('postMessage enforcement');
+
+window.onmessage = event => {
+  const { source, data } = event;
+  msgs.push(data);
+
+  t.step_timeout(() => {
+    // Only one message received from iframe; second message dropped by cowl
+    assert_equals(msgs.length, 1);
+    assert_equals(msgs[0], 'hello');
+    t.done();
+  }, 500);
+};
+
+iframe.onload = t.step_func(() => {
+  iframe.contentWindow.postMessage('hello', '*');
+});
+
+</script>

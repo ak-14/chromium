@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="help" href="https://xhr.spec.whatwg.org/#the-send()-method" data-tested-assertations="following::ol[1]/li[4] following::ol[1]/li[4]/dl[1]/dd[5]" />
+    <link rel="help" href="https://xhr.spec.whatwg.org/#interface-formdata" data-tested-assertations="following::*[contains(@id,'dom-formdata')]/following::ol[1]/li[1] following::*[contains(@id,'dom-formdata')]/following::ol[1]/li[3] following::*[contains(@id,'dom-formdata-append')]/following::ul[1]/li[1] following::*[contains(@id,'dom-formdata-append')]/following::ul[1]/li[2]" />
+    <link rel="help" href="https://xhr.spec.whatwg.org/#the-response-attribute"  data-tested-assertations="following::ol[1]/li[3]"/>
+    <script src="/resources/testharness.js"></script>
+    <script src="/resources/testharnessreport.js"></script>
+    <title>XMLHttpRequest: The send() method: LabeledObject data</title>
+</head>
+
+<body>
+    <div id="log"></div>
+
+    <script type="text/javascript">
+        const test = async_test();
+
+        test.step(function()
+        {
+            const xhr = new XMLHttpRequest();
+            const lobj = new LabeledObject({'password': 12345}, {confidentiality: new Label(window.location.origin)});
+
+            xhr.onreadystatechange = test.step_func(() => {
+                if (xhr.readyState == 4) {
+                    assert_equals(xhr.status, 200);
+                    const response = xhr.response;
+                    assert_true(response instanceof LabeledObject, "LabeledObject from XHR Response");
+                    assert_equals(response.protectedObject.password, 12345, 'xhr.response.protectedObject');
+                    assert_equals(response.confidentiality.toString(), window.location.origin, 'xhr.response.confidentiality');
+                    assert_equals(response.integrity.toString(), "'none'", 'xhr.response.integrity');
+                    test.done();
+                }
+            });
+
+            xhr.open("POST", "./resources/echo.py", true);
+            xhr.setRequestHeader("Content-Type", "application/labeled-json");
+            xhr.responseType = "labeled-json";
+            xhr.send(lobj);
+        });
+    </script>
+</body>
+</html>
